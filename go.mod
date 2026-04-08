@@ -3,7 +3,7 @@ module github.com/goravel/kafka
 go 1.25.0
 
 require (
-	github.com/goravel/framework v1.17.2
+	github.com/goravel/framework v1.17.2-0.20260408093314-17b01c6ac4a4
 	github.com/stretchr/testify v1.11.1
 	github.com/twmb/franz-go v1.20.7
 )
@@ -79,5 +79,3 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/gorm v1.31.1 // indirect
 )
-
-replace github.com/goravel/framework => /Users/haozi/Desktop/goravel/framework
