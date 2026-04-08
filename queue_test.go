@@ -45,9 +45,7 @@ func (s *QueueTestSuite) SetupSuite() {
 
 	// Mock for BuildBaseOpts (called by NewQueue for baseOpts)
 	brokers := fmt.Sprintf("%s:%d", docker.host, docker.port)
-	mockConfig.EXPECT().GetString(fmt.Sprintf("kafka.%s.brokers", testConnection)).Return(brokers).Once()
-	mockConfig.EXPECT().GetString(fmt.Sprintf("kafka.%s.sasl.mechanism", testConnection)).Return("").Once()
-	mockConfig.EXPECT().Get(fmt.Sprintf("kafka.%s.tls", testConnection)).Return(nil).Once()
+	mockBuildBaseOpts(mockConfig, testConnection, brokers, "")
 
 	mockQueue := mocksqueue.NewQueue(s.T())
 	s.mockJobStorer = mocksqueue.NewJobStorer(s.T())

@@ -41,10 +41,7 @@ func (s *ClientTestSuite) SetupTest() {
 
 func (s *ClientTestSuite) TestBuildBaseOpts() {
 	s.Run("happy path", func() {
-		s.mockConfig.EXPECT().GetString(fmt.Sprintf("kafka.%s.brokers", testConnection)).Return(s.brokers).Once()
-		s.mockConfig.EXPECT().GetString(fmt.Sprintf("kafka.%s.sasl.mechanism", testConnection)).Return("").Once()
-		s.mockConfig.EXPECT().Get(fmt.Sprintf("kafka.%s.tls", testConnection)).Return(nil).Once()
-
+		mockBuildBaseOpts(s.mockConfig, testConnection, s.brokers, "")
 		opts, err := BuildBaseOpts(s.mockConfig, testConnection)
 		s.NoError(err)
 		s.NotEmpty(opts)
@@ -52,7 +49,6 @@ func (s *ClientTestSuite) TestBuildBaseOpts() {
 
 	s.Run("empty brokers", func() {
 		s.mockConfig.EXPECT().GetString(fmt.Sprintf("kafka.%s.brokers", testConnection)).Return("").Once()
-
 		opts, err := BuildBaseOpts(s.mockConfig, testConnection)
 		s.Error(err)
 		s.Nil(opts)
@@ -60,6 +56,10 @@ func (s *ClientTestSuite) TestBuildBaseOpts() {
 
 	s.Run("with SASL PLAIN", func() {
 		s.mockConfig.EXPECT().GetString(fmt.Sprintf("kafka.%s.brokers", testConnection)).Return(s.brokers).Once()
+		s.mockConfig.EXPECT().GetString(fmt.Sprintf("kafka.%s.client_id", testConnection)).Return("").Once()
+		s.mockConfig.EXPECT().GetString(fmt.Sprintf("kafka.%s.instance_id", testConnection)).Return("").Once()
+		s.mockConfig.EXPECT().GetString(fmt.Sprintf("kafka.%s.compression", testConnection)).Return("").Once()
+		s.mockConfig.EXPECT().GetInt(fmt.Sprintf("kafka.%s.session_timeout", testConnection)).Return(0).Once()
 		s.mockConfig.EXPECT().GetString(fmt.Sprintf("kafka.%s.sasl.mechanism", testConnection)).Return("PLAIN").Once()
 		s.mockConfig.EXPECT().GetString(fmt.Sprintf("kafka.%s.sasl.username", testConnection)).Return("user").Once()
 		s.mockConfig.EXPECT().GetString(fmt.Sprintf("kafka.%s.sasl.password", testConnection)).Return("pass").Once()
@@ -72,6 +72,10 @@ func (s *ClientTestSuite) TestBuildBaseOpts() {
 
 	s.Run("with SASL SCRAM-SHA-256", func() {
 		s.mockConfig.EXPECT().GetString(fmt.Sprintf("kafka.%s.brokers", testConnection)).Return(s.brokers).Once()
+		s.mockConfig.EXPECT().GetString(fmt.Sprintf("kafka.%s.client_id", testConnection)).Return("").Once()
+		s.mockConfig.EXPECT().GetString(fmt.Sprintf("kafka.%s.instance_id", testConnection)).Return("").Once()
+		s.mockConfig.EXPECT().GetString(fmt.Sprintf("kafka.%s.compression", testConnection)).Return("").Once()
+		s.mockConfig.EXPECT().GetInt(fmt.Sprintf("kafka.%s.session_timeout", testConnection)).Return(0).Once()
 		s.mockConfig.EXPECT().GetString(fmt.Sprintf("kafka.%s.sasl.mechanism", testConnection)).Return("SCRAM-SHA-256").Once()
 		s.mockConfig.EXPECT().GetString(fmt.Sprintf("kafka.%s.sasl.username", testConnection)).Return("user").Once()
 		s.mockConfig.EXPECT().GetString(fmt.Sprintf("kafka.%s.sasl.password", testConnection)).Return("pass").Once()
@@ -84,8 +88,26 @@ func (s *ClientTestSuite) TestBuildBaseOpts() {
 
 	s.Run("with SASL OAUTHBEARER", func() {
 		s.mockConfig.EXPECT().GetString(fmt.Sprintf("kafka.%s.brokers", testConnection)).Return(s.brokers).Once()
+		s.mockConfig.EXPECT().GetString(fmt.Sprintf("kafka.%s.client_id", testConnection)).Return("").Once()
+		s.mockConfig.EXPECT().GetString(fmt.Sprintf("kafka.%s.instance_id", testConnection)).Return("").Once()
+		s.mockConfig.EXPECT().GetString(fmt.Sprintf("kafka.%s.compression", testConnection)).Return("").Once()
+		s.mockConfig.EXPECT().GetInt(fmt.Sprintf("kafka.%s.session_timeout", testConnection)).Return(0).Once()
 		s.mockConfig.EXPECT().GetString(fmt.Sprintf("kafka.%s.sasl.mechanism", testConnection)).Return("OAUTHBEARER").Once()
 		s.mockConfig.EXPECT().GetString(fmt.Sprintf("kafka.%s.sasl.token", testConnection)).Return("my-token").Once()
+		s.mockConfig.EXPECT().Get(fmt.Sprintf("kafka.%s.tls", testConnection)).Return(nil).Once()
+
+		opts, err := BuildBaseOpts(s.mockConfig, testConnection)
+		s.NoError(err)
+		s.NotEmpty(opts)
+	})
+
+	s.Run("with compression and client_id", func() {
+		s.mockConfig.EXPECT().GetString(fmt.Sprintf("kafka.%s.brokers", testConnection)).Return(s.brokers).Once()
+		s.mockConfig.EXPECT().GetString(fmt.Sprintf("kafka.%s.client_id", testConnection)).Return("my-app").Once()
+		s.mockConfig.EXPECT().GetString(fmt.Sprintf("kafka.%s.instance_id", testConnection)).Return("worker-1").Once()
+		s.mockConfig.EXPECT().GetString(fmt.Sprintf("kafka.%s.compression", testConnection)).Return("snappy").Once()
+		s.mockConfig.EXPECT().GetInt(fmt.Sprintf("kafka.%s.session_timeout", testConnection)).Return(30000).Once()
+		s.mockConfig.EXPECT().GetString(fmt.Sprintf("kafka.%s.sasl.mechanism", testConnection)).Return("").Once()
 		s.mockConfig.EXPECT().Get(fmt.Sprintf("kafka.%s.tls", testConnection)).Return(nil).Once()
 
 		opts, err := BuildBaseOpts(s.mockConfig, testConnection)
@@ -96,10 +118,7 @@ func (s *ClientTestSuite) TestBuildBaseOpts() {
 
 func (s *ClientTestSuite) TestGetProducer() {
 	s.Run("creates and caches producer", func() {
-		s.mockConfig.EXPECT().GetString(fmt.Sprintf("kafka.%s.brokers", testConnection)).Return(s.brokers).Once()
-		s.mockConfig.EXPECT().GetString(fmt.Sprintf("kafka.%s.sasl.mechanism", testConnection)).Return("").Once()
-		s.mockConfig.EXPECT().Get(fmt.Sprintf("kafka.%s.tls", testConnection)).Return(nil).Once()
-
+		mockBuildBaseOpts(s.mockConfig, testConnection, s.brokers, "")
 		client1, err := GetProducer(s.mockConfig, testConnection)
 		s.NoError(err)
 		s.NotNil(client1)
@@ -112,11 +131,7 @@ func (s *ClientTestSuite) TestGetProducer() {
 
 	s.Run("invalid brokers", func() {
 		connection := "invalid"
-
-		s.mockConfig.EXPECT().GetString(fmt.Sprintf("kafka.%s.brokers", connection)).Return("invalid-host:9999").Once()
-		s.mockConfig.EXPECT().GetString(fmt.Sprintf("kafka.%s.sasl.mechanism", connection)).Return("").Once()
-		s.mockConfig.EXPECT().Get(fmt.Sprintf("kafka.%s.tls", connection)).Return(nil).Once()
-
+		mockBuildBaseOpts(s.mockConfig, connection, "invalid-host:9999", "")
 		client, err := GetProducer(s.mockConfig, connection)
 		s.NoError(err)
 		s.Nil(client)

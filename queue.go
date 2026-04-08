@@ -184,7 +184,7 @@ func (q *Queue) getOrCreateConsumer(queueName string) *consumerState {
 		kgo.ConsumeTopics(q.topicKey.Topic(queueName)),
 		kgo.DisableAutoCommit(),
 		kgo.BlockRebalanceOnPoll(),
-		kgo.ConsumeResetOffset(kgo.NewOffset().AtEnd()),
+		kgo.ConsumeResetOffset(kgo.NewOffset().AtStart()),
 	)
 
 	client, err := kgo.NewClient(opts...)

@@ -16,7 +16,11 @@ func main() {
 	setup := packages.Setup(os.Args)
 	kafkaConfig := `map[string]any{
         "default": map[string]any{
-            "brokers":  config.Env("KAFKA_BROKERS", "localhost:9092"),
+            "brokers":     config.Env("KAFKA_BROKERS", "localhost:9092"),
+            "client_id":   config.Env("KAFKA_CLIENT_ID", ""),
+            "instance_id": config.Env("KAFKA_INSTANCE_ID", ""),
+            "compression": config.Env("KAFKA_COMPRESSION", ""),
+            "session_timeout": config.Env("KAFKA_SESSION_TIMEOUT", 0),
             "sasl": map[string]any{
                 "mechanism": config.Env("KAFKA_SASL_MECHANISM", ""),
                 "username":  config.Env("KAFKA_SASL_USERNAME", ""),

@@ -43,8 +43,12 @@ func TestQueue(t *testing.T) {
 		brokers := "localhost:9092"
 
 		mockConfig.On("GetString", "queue.connections.queue_default.connection", "default").Return(connectionName).Once()
-		// GetProducer -> BuildBaseOpts (first call)
+		// BuildBaseOpts is called twice: once by GetProducer, once by NewQueue
 		mockConfig.On("GetString", "kafka.queue_default.brokers").Return(brokers).Twice()
+		mockConfig.On("GetString", "kafka.queue_default.client_id").Return("").Twice()
+		mockConfig.On("GetString", "kafka.queue_default.instance_id").Return("").Twice()
+		mockConfig.On("GetString", "kafka.queue_default.compression").Return("").Twice()
+		mockConfig.On("GetInt", "kafka.queue_default.session_timeout").Return(0).Twice()
 		mockConfig.On("GetString", "kafka.queue_default.sasl.mechanism").Return("").Twice()
 		mockConfig.On("Get", "kafka.queue_default.tls").Return(nil).Twice()
 		mockConfig.On("GetString", "app.name", "goravel").Return("test").Once()

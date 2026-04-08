@@ -46,7 +46,7 @@ func GetProducer(config config.Config, connection string) (*kgo.Client, error) {
 	return client, nil
 }
 
-// BuildBaseOpts builds the common kgo.Opt slice (brokers, SASL, TLS) for a connection.
+// BuildBaseOpts builds the common kgo.Opt slice (brokers, SASL, TLS, etc.) for a connection.
 func BuildBaseOpts(config config.Config, connection string) ([]kgo.Opt, error) {
 	configPrefix := fmt.Sprintf("kafka.%s", connection)
 	brokersRaw := config.GetString(fmt.Sprintf("%s.brokers", configPrefix))
@@ -61,6 +61,7 @@ func BuildBaseOpts(config config.Config, connection string) ([]kgo.Opt, error) {
 
 	opts := []kgo.Opt{
 		kgo.SeedBrokers(brokers...),
+		kgo.AllowAutoTopicCreation(),
 	}
 
 	// SASL
@@ -99,6 +100,32 @@ func BuildBaseOpts(config config.Config, connection string) ([]kgo.Opt, error) {
 		opts = append(opts, kgo.DialTLSConfig(tlsConfig))
 	}
 
+	// ClientID
+	clientID := config.GetString(fmt.Sprintf("%s.client_id", configPrefix))
+	if clientID != "" {
+		opts = append(opts, kgo.ClientID(clientID))
+	}
+
+	// InstanceID (static group membership)
+	instanceID := config.GetString(fmt.Sprintf("%s.instance_id", configPrefix))
+	if instanceID != "" {
+		opts = append(opts, kgo.InstanceID(instanceID))
+	}
+
+	// Compression
+	compression := config.GetString(fmt.Sprintf("%s.compression", configPrefix))
+	if compression != "" {
+		if codec, ok := compressionCodec(compression); ok {
+			opts = append(opts, kgo.ProducerBatchCompression(codec))
+		}
+	}
+
+	// SessionTimeout
+	sessionTimeout := config.GetInt(fmt.Sprintf("%s.session_timeout", configPrefix))
+	if sessionTimeout > 0 {
+		opts = append(opts, kgo.SessionTimeout(time.Duration(sessionTimeout)*time.Millisecond))
+	}
+
 	return opts, nil
 }
 
@@ -125,4 +152,19 @@ func createProducer(config config.Config, connection string) (*kgo.Client, error
 	}
 
 	return client, nil
+}
+
+func compressionCodec(name string) (kgo.CompressionCodec, bool) {
+	switch strings.ToLower(name) {
+	case "gzip":
+		return kgo.GzipCompression(), true
+	case "snappy":
+		return kgo.SnappyCompression(), true
+	case "lz4":
+		return kgo.Lz4Compression(), true
+	case "zstd":
+		return kgo.ZstdCompression(), true
+	default:
+		return kgo.NoCompression(), false
+	}
 }
