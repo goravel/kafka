@@ -44,6 +44,7 @@ func (s *ReservedJobTestSuite) SetupSuite() {
 		kgo.ConsumerGroup("test-reserved-job-group"),
 		kgo.ConsumeTopics("test-reserved-job-topic"),
 		kgo.DisableAutoCommit(),
+		kgo.AllowAutoTopicCreation(),
 	)
 	s.Require().NoError(err)
 

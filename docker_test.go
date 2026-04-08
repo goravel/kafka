@@ -87,7 +87,7 @@ func (s *DockerTestSuite) TestBuildReadyShutdown() {
 		imageDriver: testingdocker.NewImageDriver(contractsdocker.Image{
 			Repository:   "apache/kafka",
 			Tag:          "latest",
-			ExposedPorts: []string{"9092"},
+			ExposedPorts: []string{"9092:9092"},
 			Env: []string{
 				"KAFKA_NODE_ID=1",
 				"KAFKA_PROCESS_ROLES=broker,controller",
@@ -153,13 +153,13 @@ func mockGetProducer(mockConfig *mocksconfig.Config, docker *Docker) {
 	mockBuildBaseOpts(mockConfig, testConnection, fmt.Sprintf("%s:%d", docker.host, docker.port), "")
 }
 
-// mockBuildBaseOpts mocks all config calls for BuildBaseOpts.
+// mockBuildBaseOpts mocks all config calls for BuildBaseOpts with no SASL.
 func mockBuildBaseOpts(mockConfig *mocksconfig.Config, connection, brokers, saslMechanism string) {
 	mockConfig.EXPECT().GetString(fmt.Sprintf("kafka.%s.brokers", connection)).Return(brokers).Once()
+	mockConfig.EXPECT().GetString(fmt.Sprintf("kafka.%s.sasl.mechanism", connection)).Return(saslMechanism).Once()
+	mockConfig.EXPECT().Get(fmt.Sprintf("kafka.%s.tls", connection)).Return(nil).Once()
 	mockConfig.EXPECT().GetString(fmt.Sprintf("kafka.%s.client_id", connection)).Return("").Once()
 	mockConfig.EXPECT().GetString(fmt.Sprintf("kafka.%s.instance_id", connection)).Return("").Once()
 	mockConfig.EXPECT().GetString(fmt.Sprintf("kafka.%s.compression", connection)).Return("").Once()
 	mockConfig.EXPECT().GetInt(fmt.Sprintf("kafka.%s.session_timeout", connection)).Return(0).Once()
-	mockConfig.EXPECT().GetString(fmt.Sprintf("kafka.%s.sasl.mechanism", connection)).Return(saslMechanism).Once()
-	mockConfig.EXPECT().Get(fmt.Sprintf("kafka.%s.tls", connection)).Return(nil).Once()
 }

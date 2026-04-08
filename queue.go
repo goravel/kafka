@@ -69,6 +69,10 @@ func (q *Queue) Driver() string {
 }
 
 func (q *Queue) Push(task contractsqueue.Task, queue string) error {
+	if q.producer == nil {
+		return fmt.Errorf("kafka producer is not connected")
+	}
+
 	if !task.Delay.IsZero() {
 		return q.later(task.Delay, task, queue)
 	}
@@ -88,7 +92,7 @@ func (q *Queue) Push(task contractsqueue.Task, queue string) error {
 }
 
 func (q *Queue) Pop(queue string) (contractsqueue.ReservedJob, error) {
-	ctx, cancel := context.WithTimeout(q.ctx, 100*time.Millisecond)
+	ctx, cancel := context.WithTimeout(q.ctx, 5*time.Second)
 	defer cancel()
 
 	jobs, err := q.Receive(ctx, queue, 1)

@@ -90,19 +90,18 @@ func (s *QueueTestSuite) TestPush() {
 
 		s.NoError(s.queue.Push(task, queue))
 
-		// Verify by consuming the message
 		s.mockJobStorer.EXPECT().Get(task.Job.Signature()).Return(&MockJob{}, nil).Once()
 
-		// Wait for message to be available
-		time.Sleep(2 * time.Second)
+		ctx, cancel := context.WithTimeout(s.ctx, 10*time.Second)
+		defer cancel()
 
-		job, err := s.queue.Pop(queue)
+		jobs, err := s.queue.Receive(ctx, queue, 1)
 		s.NoError(err)
-		s.NotNil(job)
-		s.Equal(task.Job.Signature(), job.Task().Job.Signature())
-		s.Equal(task.UUID, job.Task().UUID)
+		s.Len(jobs, 1)
+		s.Equal(task.Job.Signature(), jobs[0].Task().Job.Signature())
+		s.Equal(task.UUID, jobs[0].Task().UUID)
 
-		s.NoError(job.Delete())
+		s.NoError(jobs[0].Delete())
 	})
 
 	s.Run("delay", func() {
@@ -112,30 +111,32 @@ func (s *QueueTestSuite) TestPush() {
 			ChainJob: contractsqueue.ChainJob{
 				Job:   &MockJob{},
 				Args:  testArgs,
-				Delay: time.Now().Add(2 * time.Second),
+				Delay: time.Now().Add(3 * time.Second),
 			},
 		}
 
 		s.NoError(s.queue.Push(task, queue))
 
 		// Should not be available immediately on main topic
-		time.Sleep(500 * time.Millisecond)
-		job, err := s.queue.Pop(queue)
-		s.Nil(job)
-		s.NotNil(err)
+		ctx1, cancel1 := context.WithTimeout(s.ctx, 1*time.Second)
+		defer cancel1()
+		jobs, err := s.queue.Receive(ctx1, queue, 1)
+		s.NoError(err)
+		s.Empty(jobs)
 
 		// Wait for delay to pass + migration
-		time.Sleep(3 * time.Second)
+		time.Sleep(4 * time.Second)
 
-		// Trigger migration and check
 		s.mockJobStorer.EXPECT().Get(task.Job.Signature()).Return(&MockJob{}, nil).Once()
 
-		job, err = s.queue.Pop(queue)
+		ctx2, cancel2 := context.WithTimeout(s.ctx, 10*time.Second)
+		defer cancel2()
+		jobs, err = s.queue.Receive(ctx2, queue, 1)
 		s.NoError(err)
-		s.NotNil(job)
-		s.Equal(task.UUID, job.Task().UUID)
+		s.Len(jobs, 1)
+		s.Equal(task.UUID, jobs[0].Task().UUID)
 
-		s.NoError(job.Delete())
+		s.NoError(jobs[0].Delete())
 	})
 }
 

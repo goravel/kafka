@@ -40,7 +40,7 @@ func NewDocker(config contractsconfig.Config, process contractsprocess.Process, 
 		imageDriver: testingdocker.NewImageDriver(contractsdocker.Image{
 			Repository:   "apache/kafka",
 			Tag:          "latest",
-			ExposedPorts: []string{"9092"},
+			ExposedPorts: []string{"9092:9092"},
 			Env: []string{
 				"KAFKA_NODE_ID=1",
 				"KAFKA_PROCESS_ROLES=broker,controller",

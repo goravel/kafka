@@ -72,25 +72,14 @@ func BuildBaseOpts(config config.Config, connection string) ([]kgo.Opt, error) {
 
 		switch strings.ToUpper(mechanism) {
 		case "PLAIN":
-			opts = append(opts, kgo.SASL(plain.Auth{
-				User: username,
-				Pass: password,
-			}.AsMechanism()))
+			opts = append(opts, kgo.SASL(plain.Auth{User: username, Pass: password}.AsMechanism()))
 		case "SCRAM-SHA-256":
-			opts = append(opts, kgo.SASL(scram.Auth{
-				User: username,
-				Pass: password,
-			}.AsSha256Mechanism()))
+			opts = append(opts, kgo.SASL(scram.Auth{User: username, Pass: password}.AsSha256Mechanism()))
 		case "SCRAM-SHA-512":
-			opts = append(opts, kgo.SASL(scram.Auth{
-				User: username,
-				Pass: password,
-			}.AsSha512Mechanism()))
+			opts = append(opts, kgo.SASL(scram.Auth{User: username, Pass: password}.AsSha512Mechanism()))
 		case "OAUTHBEARER":
 			token := config.GetString(fmt.Sprintf("%s.sasl.token", configPrefix))
-			opts = append(opts, kgo.SASL(oauth.Auth{
-				Token: token,
-			}.AsMechanism()))
+			opts = append(opts, kgo.SASL(oauth.Auth{Token: token}.AsMechanism()))
 		}
 	}
 
